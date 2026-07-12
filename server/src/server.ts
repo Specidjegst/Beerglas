@@ -12,6 +12,9 @@ export interface AppDeps {
   auth: AuthService;
   lobbies: LobbyManager;
   pours: PourSessionManager;
+  /** "mock" | "anchor" — wird im /health mitgemeldet, damit das Frontend
+   *  den Demo-Modus (Gast-Login, Join ohne Tx) zur Laufzeit erkennt. */
+  chainMode?: "anchor" | "mock";
   logger?: boolean;
 }
 
@@ -25,7 +28,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
   await app.register(websocket);
 
-  app.get("/health", async () => ({ ok: true, ts: Date.now() }));
+  app.get("/health", async () => ({
+    ok: true,
+    ts: Date.now(),
+    chain: deps.chainMode ?? null,
+  }));
 
   /** Open lobbies with entry fee, seats and pot (watcher-safe view). */
   app.get("/lobbies", async () => ({ lobbies: deps.lobbies.listOpen() }));

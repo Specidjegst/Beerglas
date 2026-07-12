@@ -69,6 +69,21 @@ function parseLobby(raw: unknown): LobbySummary | null {
   };
 }
 
+/**
+ * Chain-Modus des Servers ("mock" | "anchor" | null). Läuft der Server im
+ * Mock-Modus, schaltet das Frontend den Demo-/Gast-Flow zur Laufzeit frei —
+ * unabhängig von Build-Zeit-Envs.
+ */
+export async function fetchServerChainMode(): Promise<string | null> {
+  try {
+    const data = (await getJson("/health")) as Record<string, unknown>;
+    const chain = pick(data, "chain");
+    return typeof chain === "string" ? chain : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Offene Lobbies vom Server. */
 export async function fetchLobbies(): Promise<LobbySummary[]> {
   const data = await getJson("/lobbies");

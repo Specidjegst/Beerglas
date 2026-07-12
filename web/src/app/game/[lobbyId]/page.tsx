@@ -25,7 +25,7 @@ import Countdown from "@/components/Countdown";
 import { WalletButton } from "@/components/WalletProviders";
 import { useGameSocket } from "@/hooks/useGameSocket";
 import { buildJoinLobbyTransaction } from "@/lib/anchorClient";
-import { loginMessage, requestNonce, verifyLogin } from "@/lib/api";
+import { fetchServerChainMode, loginMessage, requestNonce, verifyLogin } from "@/lib/api";
 import { fmtSol } from "@/lib/format";
 import { DEMO_MODE, LOBBY_SIZE } from "@/lib/constants";
 
@@ -37,7 +37,21 @@ export default function GamePage() {
   const { connection } = useConnection();
   const { publicKey, connected, signMessage, sendTransaction } = useWallet();
 
-  // Gast-Identität (nur DEMO_MODE): flüchtiges Keypair im Speicher, signiert
+  // Demo-Modus: per Build-Env erzwingbar (NEXT_PUBLIC_DEMO_MODE=1), sonst
+  // zur Laufzeit erkannt — Server im Mock-Modus => Gast-Login + Join ohne Tx.
+  const [demoMode, setDemoMode] = useState(DEMO_MODE);
+  useEffect(() => {
+    if (DEMO_MODE) return;
+    let cancelled = false;
+    void fetchServerChainMode().then((chain) => {
+      if (!cancelled && chain === "mock") setDemoMode(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Gast-Identität (nur Demo-Modus): flüchtiges Keypair im Speicher, signiert
   // den Login lokal — kein Wallet, kein SOL, keine Extension nötig.
   const [guest, setGuest] = useState<Keypair | null>(null);
   const activePubkey = publicKey ?? guest?.publicKey ?? null;
@@ -133,7 +147,7 @@ export default function GamePage() {
     setJoinBusy(true);
     setFlowError(null);
     try {
-      if (DEMO_MODE) {
+      if (demoMode) {
         // Testphase: keine On-Chain-Transaktion — der Mock-Server (CHAIN=mock)
         // akzeptiert jede Signatur. Kein Entry-Fee-Transfer, reiner UI-/Flow-Test.
         setJoinSig(`demo-${activePubkey.toBase58().slice(0, 8)}-${Date.now()}`);
@@ -155,7 +169,7 @@ export default function GamePage() {
     } finally {
       setJoinBusy(false);
     }
-  }, [publicKey, lobbyId, connection, sendTransaction]);
+  }, [activePubkey, publicKey, demoMode, lobbyId, connection, sendTransaction]);
 
   const canPour =
     joined && token !== null && roundConfig !== null && !locked && socket.status === "open";
@@ -252,7 +266,7 @@ export default function GamePage() {
       <div className="controls">
         {flowStep === "connect" ? (
           <div className="flow-panel">
-            {DEMO_MODE ? (
+            {demoMode ? (
               <>
                 <button
                   className="hold-btn"
@@ -291,13 +305,13 @@ export default function GamePage() {
             <button className="hold-btn" onClick={() => void doJoin()} disabled={joinBusy}>
               {joinBusy
                 ? "TRANSAKTION LÄUFT …"
-                : DEMO_MODE
+                : demoMode
                   ? "MITSPIELEN (DEMO — KEIN EINSATZ)"
                   : `EINSATZ ZAHLEN · ${fmtSol(lobbyState?.entryFeeLamports ?? 0)}`}
             </button>
             <div className="msg">
               <span className={`ws-dot${socket.status === "open" ? " open" : ""}`} />
-              {DEMO_MODE
+              {demoMode
                 ? "Demo-Modus: Testphase ohne echte Transaktion."
                 : "Einsatz geht in den Lobby-Vault (on-chain, devnet)."}
             </div>

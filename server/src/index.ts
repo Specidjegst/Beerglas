@@ -50,7 +50,7 @@ async function main(): Promise<void> {
   });
   await ensureOpenLobby();
 
-  const app = await buildApp({ auth, lobbies, pours });
+  const app = await buildApp({ auth, lobbies, pours, chainMode: cfg.chain });
   await app.listen({ port: cfg.port, host: cfg.host });
   console.log(`ZAPF ROYALE server on :${cfg.port} (chain=${cfg.chain})`);
 
