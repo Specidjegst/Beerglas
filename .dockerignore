@@ -1,10 +1,11 @@
-# Build-Kontext-Ignore für server/Dockerfile (Kontext = Repo-Root).
+# Build-Kontext-Ignore für server/Dockerfile UND web/Dockerfile
+# (Kontext ist jeweils der Repo-Root; die Dockerfiles kopieren ohnehin
+# nur gezielt die Pfade, die sie brauchen).
 .git
 .github
 .claude
 docs
 program
-web
 files.zip
 **/node_modules
 **/dist

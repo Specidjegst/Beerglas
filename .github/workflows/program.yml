@@ -84,8 +84,12 @@ jobs:
             solana-keygen new --no-bip39-passphrase --silent -o ~/.config/solana/id.json
           fi
 
-      - name: JS-Testdependencies (yarn, wie von Anchor.toml erwartet)
-        run: yarn install
+      - name: JS-Testdependencies (npm)
+        # --legacy-peer-deps: anchor-bankrun@0.5.0 pinnt peer @coral-xyz/anchor
+        # auf ^0.30, ist mit 0.31 aber funktional kompatibel (Upstream noch
+        # nicht nachgezogen). npm statt yarn: keine corepack-/packageManager-
+        # Interferenz mit dem pnpm-Pin im Repo-Root.
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: anchor build
         run: |
@@ -99,11 +103,11 @@ jobs:
           anchor build ${CARGO_ARGS}
 
       - name: anchor test (bankrun, ohne Validator/Deploy)
-        # Führt exakt das [scripts].test aus Anchor.toml aus (ts-mocha gegen
+        # Führt das bankrun-Testscript direkt aus (ts-mocha gegen
         # solana-bankrun). Die Tests laden target/deploy/zapf_royale.so direkt,
         # daher braucht es weder solana-test-validator noch einen Deploy —
         # und kein Risiko, dass "anchor test" gegen provider.cluster=devnet läuft.
-        run: yarn test:bankrun
+        run: npm run test:bankrun
 
       - name: Artefakte hochladen (.so + IDL + Types)
         uses: actions/upload-artifact@v4

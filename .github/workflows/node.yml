@@ -61,3 +61,34 @@ jobs:
           NEXT_PUBLIC_RPC_URL: "https://api.devnet.solana.com"
           NEXT_PUBLIC_PROGRAM_ID: "11111111111111111111111111111111"
         run: pnpm --filter @zapf/web build
+
+  docker:
+    # Verifiziert die beiden Railway-Images (server/Dockerfile, web/Dockerfile),
+    # ohne sie zu pushen — Build-Kontext ist jeweils der Repo-Root.
+    name: docker build (server + web)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "server-Image bauen"
+        run: docker build -f server/Dockerfile -t zapf-server:ci .
+
+      - name: "web-Image bauen (Next.js standalone)"
+        run: docker build -f web/Dockerfile -t zapf-web:ci .
+
+      - name: "web-Image Smoke-Test (Standalone-Server startet und antwortet)"
+        run: |
+          docker run -d --rm --name zapf-web -p 3000:3000 zapf-web:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/ > /dev/null; then
+              echo "Frontend antwortet."
+              docker stop zapf-web
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Frontend hat nicht geantwortet:"
+          docker logs zapf-web
+          docker stop zapf-web
+          exit 1

@@ -182,14 +182,22 @@ Einmalig die Config anlegen: `fee_bps = 400`, Treasury-Pubkey,
 
 ### 3. Server auf Railway
 
-Die [`railway.json`](railway.json) im Root konfiguriert den Service bereits:
-Build über `server/Dockerfile` (Multi-Stage, non-root, Port 8787),
-Healthcheck auf **`/health`**, Restart-Policy `ON_FAILURE`.
+Beide Deployments laufen als **zwei Services im selben Railway-Projekt**,
+jeweils aus diesem Repo. Die Service-Konfigurationen liegen als
+Config-as-Code im Repo: [`server/railway.json`](server/railway.json) und
+[`web/railway.json`](web/railway.json).
+
+**Service 1 — Game-Server:** Build über `server/Dockerfile` (Multi-Stage,
+non-root, Port 8787), Healthcheck auf **`/health`**, Restart-Policy
+`ON_FAILURE`.
 
 Manuelle Schritte im Railway-Dashboard:
 
-1. **Projekt aus dem GitHub-Repo anlegen** — Railway erkennt `railway.json`
-   und baut das Dockerfile (Build-Kontext = Repo-Root).
+1. **Projekt aus dem GitHub-Repo anlegen.** Im Service unter
+   *Settings → Config-as-code* den Pfad **`server/railway.json`** setzen
+   (Root Directory leer lassen — Build-Kontext muss der Repo-Root bleiben,
+   sonst findet der pnpm-Workspace-Build sein Lockfile nicht). Sinnvoll:
+   *Watch Paths* auf `server/**` begrenzen.
 2. **Volume mounten auf `/app/data`** — dort liegt die JSON-Persistenz
    (Lobbies, Join-Timestamps, Pending-Rounds). Ohne Volume ist der State
    nach jedem Redeploy weg.
@@ -211,24 +219,27 @@ Manuelle Schritte im Railway-Dashboard:
 4. Nach dem Deploy die öffentliche URL des Service notieren — sie wird
    `NEXT_PUBLIC_SERVER_URL` fürs Frontend.
 
-### 4. Web auf Vercel (oder als zweiter Railway-Service)
+### 4. Web auf Railway (zweiter Service)
 
-**Vercel** (empfohlen): Neues Projekt aus dem Repo, dann
+**Service 2 — Frontend:** Im selben Railway-Projekt einen zweiten Service
+aus demselben Repo anlegen. Build über `web/Dockerfile`
+(Next.js-**standalone**-Build, non-root, Port 3000), Healthcheck auf `/`.
 
-- **Root Directory:** `web/`
-- **Framework Preset:** Next.js (Build-Command/Output automatisch)
-- **Env-Variablen:**
+1. Unter *Settings → Config-as-code* den Pfad **`web/railway.json`** setzen
+   (Root Directory wieder leer lassen). *Watch Paths*: `web/**`.
+2. **Env-Variablen setzen** (werden beim Docker-Build als Build-Args
+   durchgereicht — Next.js backt `NEXT_PUBLIC_*` zur Build-Zeit ins Bundle,
+   nach einer Änderung also **redeployen**):
 
-  | Variable | Wert |
-  | --- | --- |
-  | `NEXT_PUBLIC_SERVER_URL` | Railway-URL des Game-Servers (Schritt 3) |
-  | `NEXT_PUBLIC_RPC_URL` | Solana-devnet-RPC |
-  | `NEXT_PUBLIC_PROGRAM_ID` | Program-ID aus Schritt 1 |
+   | Variable | Wert |
+   | --- | --- |
+   | `NEXT_PUBLIC_SERVER_URL` | öffentliche Railway-URL des Game-Servers (Schritt 3) |
+   | `NEXT_PUBLIC_RPC_URL` | Solana-devnet-RPC (z. B. `https://api.devnet.solana.com`) |
+   | `NEXT_PUBLIC_PROGRAM_ID` | Program-ID aus Schritt 1 |
 
-**Alternative:** zweiter Railway-Service im selben Projekt mit Root-Directory
-`web/` (Nixpacks/Railpack erkennt Next.js; dieselben drei `NEXT_PUBLIC_*`-Vars
-setzen, Start-Command `next start -p $PORT`). Ein `vercel.json` ist nicht
-nötig.
+   `PORT` setzt Railway selbst — der Standalone-Server (`web/server.js`)
+   liest `PORT`/`HOSTNAME` aus der Umgebung.
+3. Public Domain für den Service generieren — fertig.
 
 ---
 
