@@ -1,0 +1,117 @@
+name: program
+
+# Baut und testet das Anchor-Programm (program/) bei jedem Push auf main,
+# der program/** berührt. Kann zusätzlich manuell gestartet werden
+# (workflow_dispatch) — praktisch als "Build-Maschine" für Windows-Nutzer:
+# die Artefakte (zapf_royale.so + IDL + TS-Types) hängen am Workflow-Run.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "program/**"
+      - ".github/workflows/program.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: program-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ANCHOR_VERSION: "0.31.1"
+  # "stable" = aktuelle Agave-Stable. Bei Toolchain-Inkompatibilitäten hier
+  # auf eine konkrete Version pinnen, z. B. "v2.1.21".
+  SOLANA_VERSION: "stable"
+
+jobs:
+  build-and-test:
+    name: anchor build + test (bankrun)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: program
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 20 (bankrun-Testsuite)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Rust (stable, minimal)
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Cache cargo registry + Anchor-CLI + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.anchor-cli
+            program/target
+          key: program-${{ runner.os }}-anchor-${{ env.ANCHOR_VERSION }}-${{ hashFiles('program/Cargo.toml', 'program/programs/**/Cargo.toml') }}
+          restore-keys: |
+            program-${{ runner.os }}-anchor-${{ env.ANCHOR_VERSION }}-
+
+      - name: Solana CLI (Agave) installieren
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/${SOLANA_VERSION}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      - name: Anchor CLI ${{ env.ANCHOR_VERSION }} installieren (gecacht)
+        run: |
+          # In ein eigenes --root installiert, damit der Cache die rustup-Shims
+          # in ~/.cargo/bin nicht überschreibt.
+          if [ ! -x "$HOME/.anchor-cli/bin/anchor" ] || \
+             ! "$HOME/.anchor-cli/bin/anchor" --version | grep -q "$ANCHOR_VERSION"; then
+            cargo install anchor-cli \
+              --git https://github.com/coral-xyz/anchor \
+              --tag "v${ANCHOR_VERSION}" \
+              --locked --force \
+              --root "$HOME/.anchor-cli"
+          fi
+          echo "$HOME/.anchor-cli/bin" >> "$GITHUB_PATH"
+          "$HOME/.anchor-cli/bin/anchor" --version
+          solana --version
+
+      - name: Wegwerf-Keypair für den Anchor-Provider
+        run: |
+          mkdir -p ~/.config/solana
+          if [ ! -f ~/.config/solana/id.json ]; then
+            solana-keygen new --no-bip39-passphrase --silent -o ~/.config/solana/id.json
+          fi
+
+      - name: JS-Testdependencies (yarn, wie von Anchor.toml erwartet)
+        run: yarn install
+
+      - name: anchor build
+        run: |
+          # Falls das Programm ein test-vrf-Featureflag definiert (VRF-Mock für
+          # Bankrun-Tests), mit diesem Feature bauen.
+          CARGO_ARGS=""
+          if grep -qs "test-vrf" Anchor.toml programs/*/Cargo.toml; then
+            CARGO_ARGS="-- --features test-vrf"
+            echo "test-vrf-Feature erkannt — baue mit ${CARGO_ARGS}"
+          fi
+          anchor build ${CARGO_ARGS}
+
+      - name: anchor test (bankrun, ohne Validator/Deploy)
+        # Führt exakt das [scripts].test aus Anchor.toml aus (ts-mocha gegen
+        # solana-bankrun). Die Tests laden target/deploy/zapf_royale.so direkt,
+        # daher braucht es weder solana-test-validator noch einen Deploy —
+        # und kein Risiko, dass "anchor test" gegen provider.cluster=devnet läuft.
+        run: yarn test:bankrun
+
+      - name: Artefakte hochladen (.so + IDL + Types)
+        uses: actions/upload-artifact@v4
+        with:
+          name: zapf-royale-program
+          path: |
+            program/target/deploy/*.so
+            program/target/idl/*.json
+            program/target/types/*.ts
+          if-no-files-found: error
+          retention-days: 30

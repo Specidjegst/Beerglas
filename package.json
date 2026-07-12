@@ -1,0 +1,13 @@
+{
+  "name": "zapf-royale",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ZAPF ROYALE — PvP Bierzapfen auf Solana (devnet)",
+  "scripts": {
+    "dev:server": "pnpm --filter @zapf/server dev",
+    "dev:web": "pnpm --filter @zapf/web dev",
+    "test:server": "pnpm --filter @zapf/server test",
+    "build": "pnpm -r build"
+  },
+  "packageManager": "pnpm@10.34.5"
+}

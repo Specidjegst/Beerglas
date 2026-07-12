@@ -1,0 +1,14 @@
+# Ignore-Liste für den Server-Image-Build.
+# Hinweis: Der Build-Kontext ist der Repo-Root (siehe server/Dockerfile);
+# beim lokalen "docker build" greift primär die .dockerignore im Repo-Root —
+# diese Datei hält die Muster zusätzlich beim Dockerfile, falls ein Builder
+# (z. B. Railway) sie relativ zum Dockerfile auswertet.
+
+node_modules
+dist
+data
+coverage
+.env
+.env.*
+*.log
+*.tsbuildinfo

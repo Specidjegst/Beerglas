@@ -1,0 +1,31 @@
+[toolchain]
+anchor_version = "0.31.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+zapf_royale = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[programs.devnet]
+zapf_royale = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+# Tests laufen gegen solana-bankrun (lädt target/deploy/zapf_royale.so),
+# es wird KEIN lokaler Validator benötigt.
+#
+# WICHTIG: Das Programm muss mit dem Cargo-Feature "test-vrf" gebaut sein,
+# damit die Tests den VRF-Oracle-Callback simulieren können:
+#   anchor test -- --features test-vrf     (baut + testet)
+# oder manuell:
+#   anchor build -- --features test-vrf && yarn test:bankrun
+# NIEMALS ein test-vrf-Artefakt deployen (siehe programs/zapf-royale/Cargo.toml)!
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.test.ts"

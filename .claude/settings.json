@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "PowerShell(git *)",
+      "PowerShell(npm *)",
+      "PowerShell(pnpm *)",
+      "PowerShell(node *)",
+      "PowerShell(npx *)",
+      "PowerShell(corepack *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(Copy-Item *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Invoke-RestMethod -Uri \"https://api.github.com/*)",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(pnpm *)",
+      "Bash(node *)",
+      "Bash(npx *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(ls *)"
+    ]
+  }
+}

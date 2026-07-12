@@ -1,0 +1,704 @@
+/* ═══ ZAPF ROYALE — Optik 1:1 aus docs/zapf-royale-v2.html portiert ═══ */
+
+:root {
+  --bg: #100b07;
+  --chalk: #ede7d8;
+  --chalk-dim: #9b9284;
+  --brass: #d6a644;
+  --brass-deep: #8f6a1e;
+  --foamc: #fff6e0;
+  --good: #7bc96f;
+  --bad: #e05555;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(220px 160px at 12% 18%, rgba(255, 170, 60, 0.1), transparent 70%),
+    radial-gradient(180px 140px at 88% 12%, rgba(255, 140, 40, 0.08), transparent 70%),
+    radial-gradient(260px 200px at 78% 55%, rgba(255, 190, 90, 0.05), transparent 70%),
+    radial-gradient(1400px 700px at 50% -12%, #2a1c0e 0%, transparent 60%),
+    var(--bg);
+  color: var(--chalk);
+  font-family: var(--font-outfit), 'Outfit', sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Spielseite: festes Layout ohne Scrollen (wie das Demo) */
+.game-shell {
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Lobby-/Stats-Seiten: scrollbar */
+.page {
+  width: 100%;
+  max-width: 520px;
+  padding: 0 18px 40px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+header {
+  width: 100%;
+  max-width: 520px;
+  padding: 12px 18px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.logo {
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 1.1rem;
+  color: var(--brass);
+  line-height: 1.1;
+}
+
+.logo small {
+  display: block;
+  font-family: var(--font-outfit), 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.55rem;
+  color: var(--chalk-dim);
+  letter-spacing: 2.5px;
+  margin-top: 2px;
+}
+
+.pot {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--foamc);
+  background: linear-gradient(180deg, #3a2a15, #2a1d0e);
+  border: 1px solid var(--brass-deep);
+  border-radius: 999px;
+  padding: 6px 13px;
+  white-space: nowrap;
+}
+
+.pot b {
+  color: var(--brass);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Spielerchips ───────────────────────────────────────────────────── */
+.players {
+  width: 100%;
+  max-width: 520px;
+  padding: 4px 18px 0;
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  color: var(--chalk-dim);
+  background: rgba(29, 22, 16, 0.8);
+  border: 1px solid #35281a;
+  border-radius: 8px;
+  padding: 5px 2px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.chip.me {
+  color: var(--foamc);
+  border-color: var(--brass);
+  background: rgba(42, 31, 16, 0.9);
+}
+
+.chip .st {
+  display: block;
+  font-size: 0.5rem;
+  margin-top: 2px;
+  color: var(--chalk-dim);
+}
+
+.chip.me .st {
+  color: var(--brass);
+}
+
+.chip.chip-free {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+/* ── HUD (ZIEL + FASSDRUCK) ─────────────────────────────────────────── */
+.hud {
+  width: 100%;
+  max-width: 520px;
+  padding: 6px 22px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.target-hud .lbl {
+  font-weight: 600;
+  font-size: 0.58rem;
+  letter-spacing: 3px;
+  color: var(--chalk-dim);
+}
+
+.target-hud .val {
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 1.9rem;
+  color: var(--chalk);
+  line-height: 1.05;
+  text-shadow: 0 0 20px rgba(237, 231, 216, 0.18);
+}
+
+.gauge-wrap {
+  text-align: center;
+}
+
+.gauge-wrap .lbl {
+  font-weight: 600;
+  font-size: 0.52rem;
+  letter-spacing: 2px;
+  color: var(--chalk-dim);
+  margin-top: 2px;
+}
+
+/* ── Bühne ──────────────────────────────────────────────────────────── */
+.stage {
+  position: relative;
+  width: min(92vw, 340px);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.stage svg {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  touch-action: none;
+}
+
+/* ── Controls ───────────────────────────────────────────────────────── */
+.controls {
+  width: 100%;
+  max-width: 520px;
+  padding: 2px 18px 18px;
+  text-align: center;
+}
+
+.hold-btn {
+  width: 100%;
+  max-width: 340px;
+  padding: 17px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 1.05rem;
+  letter-spacing: 1px;
+  color: #1a120b;
+  background: linear-gradient(180deg, #f2d78c, var(--brass) 55%, var(--brass-deep));
+  box-shadow: 0 5px 0 #5e4413, 0 8px 18px rgba(0, 0, 0, 0.5);
+  transition: transform 0.08s, box-shadow 0.08s;
+  touch-action: none;
+}
+
+.hold-btn:active,
+.hold-btn.down {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #5e4413, 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.hold-btn:disabled {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: default;
+  transform: none;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--chalk-dim);
+}
+
+/* ── Overlay / Result-Card ──────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 5, 3, 0.8);
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.card {
+  width: min(88vw, 360px);
+  text-align: center;
+  padding: 30px 26px 24px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #2b1f12, #1d1610);
+  border: 1px solid var(--brass-deep);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  transform: scale(0.9);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.overlay.show .card {
+  transform: scale(1);
+}
+
+.verdict {
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 1.6rem;
+  color: var(--brass);
+  line-height: 1.1;
+}
+
+.acc {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 2.9rem;
+  font-weight: 600;
+  margin: 12px 0 2px;
+  color: var(--foamc);
+}
+
+.detail {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--chalk-dim);
+}
+
+.detail b {
+  color: var(--chalk);
+}
+
+.again {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 0.95rem;
+  color: #1a120b;
+  background: linear-gradient(180deg, #f2d78c, var(--brass) 55%, var(--brass-deep));
+  box-shadow: 0 4px 0 #5e4413;
+}
+
+.again:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #5e4413;
+}
+
+.explorer-link {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--brass);
+  border-bottom: 1px dashed var(--brass-deep);
+  padding-bottom: 1px;
+}
+
+.seed-line {
+  margin-top: 10px;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--chalk-dim);
+  word-break: break-all;
+}
+
+.seed-line code {
+  color: var(--chalk);
+}
+
+/* ── Countdown (60 s Spielzeit) ─────────────────────────────────────── */
+.countdown {
+  width: 100%;
+  max-width: 520px;
+  padding: 2px 22px 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+}
+
+.countdown-num {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: var(--foamc);
+  text-shadow: 0 0 18px rgba(255, 246, 224, 0.25);
+}
+
+.countdown-lbl {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  color: var(--chalk-dim);
+}
+
+.countdown.danger .countdown-num {
+  color: var(--bad);
+  animation: countdown-pulse 1s infinite;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .countdown.danger .countdown-num {
+    animation: none;
+  }
+}
+
+/* ── Lobby-Liste ────────────────────────────────────────────────────── */
+.page h1 {
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 1.3rem;
+  color: var(--chalk);
+  margin: 18px 0 4px;
+}
+
+.page .sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--chalk-dim);
+  margin-bottom: 14px;
+}
+
+.lobby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lobby-card {
+  display: block;
+  background: linear-gradient(180deg, #2b1f12, #1d1610);
+  border: 1px solid #35281a;
+  border-radius: 16px;
+  padding: 14px 16px 12px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.lobby-card:hover {
+  border-color: var(--brass);
+  transform: translateY(-1px);
+}
+
+.lobby-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.lobby-id {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chalk);
+}
+
+.lobby-status {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--good);
+  border: 1px solid rgba(123, 201, 111, 0.4);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.lobby-status.full {
+  color: var(--chalk-dim);
+  border-color: #35281a;
+}
+
+.lobby-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.lobby-card-grid .lbl {
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--chalk-dim);
+}
+
+.lobby-card-grid .val {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--chalk);
+  margin-top: 2px;
+}
+
+.lobby-card-grid .val.brass {
+  color: var(--brass);
+}
+
+.lobby-card-cta {
+  margin-top: 10px;
+  text-align: right;
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 0.72rem;
+  color: var(--brass);
+  letter-spacing: 1px;
+}
+
+.empty-note,
+.error-note {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chalk-dim);
+  background: rgba(29, 22, 16, 0.8);
+  border: 1px dashed #35281a;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+}
+
+.error-note {
+  color: var(--bad);
+  border-color: rgba(224, 85, 85, 0.4);
+}
+
+/* ── Disclaimer ─────────────────────────────────────────────────────── */
+.disclaimer {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(224, 85, 85, 0.45);
+  border-radius: 12px;
+  background: rgba(224, 85, 85, 0.07);
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--chalk-dim);
+}
+
+.disclaimer b {
+  color: var(--bad);
+  letter-spacing: 1px;
+}
+
+/* ── Statuszeile / Join-Panel auf der Spielseite ────────────────────── */
+.flow-panel {
+  width: 100%;
+  max-width: 520px;
+  padding: 10px 18px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.flow-panel .msg {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chalk-dim);
+}
+
+.flow-panel .msg.err {
+  color: var(--bad);
+}
+
+.ws-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bad);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.ws-dot.open {
+  background: var(--good);
+}
+
+/* ── Stats-Seite ────────────────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.stat-tile {
+  background: linear-gradient(180deg, #2b1f12, #1d1610);
+  border: 1px solid #35281a;
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.stat-tile .lbl {
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--chalk-dim);
+}
+
+.stat-tile .val {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
+  color: var(--foamc);
+  margin-top: 6px;
+  word-break: break-all;
+}
+
+.stat-tile .val.brass {
+  color: var(--brass);
+}
+
+.settlement-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #35281a;
+  border-radius: 12px;
+  background: rgba(29, 22, 16, 0.8);
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--chalk-dim);
+  margin-bottom: 8px;
+}
+
+.settlement-row b {
+  color: var(--chalk);
+}
+
+.settlement-row a {
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+.fairness {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--brass-deep);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #2b1f12, #1d1610);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--chalk-dim);
+}
+
+.fairness h2 {
+  font-family: var(--font-slab), 'Alfa Slab One', serif;
+  font-size: 0.9rem;
+  color: var(--brass);
+  margin-bottom: 8px;
+}
+
+.fairness code {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--chalk);
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 14px;
+  margin: 10px 0 4px;
+}
+
+.nav-links a {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--chalk-dim);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--brass);
+  border-color: var(--brass-deep);
+}
+
+/* ── Wallet-Adapter-Button ans Theme anpassen ───────────────────────── */
+.wallet-adapter-button-trigger {
+  font-family: var(--font-slab), 'Alfa Slab One', serif !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 1px;
+  color: #1a120b !important;
+  background: linear-gradient(180deg, #f2d78c, var(--brass) 55%, var(--brass-deep)) !important;
+  border-radius: 999px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  padding: 0 14px !important;
+  box-shadow: 0 3px 0 #5e4413;
+}
+
+.wallet-adapter-button-trigger:not([disabled]):hover {
+  background: linear-gradient(180deg, #f9e2a4, var(--brass) 55%, var(--brass-deep)) !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  background: linear-gradient(180deg, #2b1f12, #1d1610) !important;
+  border: 1px solid var(--brass-deep);
+  font-family: var(--font-outfit), 'Outfit', sans-serif !important;
+}
+
+.wallet-adapter-modal-title {
+  color: var(--chalk) !important;
+}

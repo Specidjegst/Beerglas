@@ -1,0 +1,577 @@
+{
+  "address": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+  "metadata": {
+    "name": "zapf_royale",
+    "version": "0.2.0",
+    "spec": "0.1.0",
+    "description": "HAND-WRITTEN placeholder IDL for the zapf_royale Anchor program (MagicBlock Ephemeral VRF flow), aligned with program/programs/zapf-royale/src. Replace this file with target/idl/zapf_royale.json after `anchor build` in program/. The address is the declare_id! placeholder and is overridden at runtime. Discriminators follow the standard Anchor derivation (sha256('global:<ix>')[0..8] / sha256('account:<Name>')[0..8])."
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "global_stats",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "allowed_entry_fees",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "treasury",
+          "type": "pubkey"
+        },
+        {
+          "name": "result_authority",
+          "type": "pubkey"
+        },
+        {
+          "name": "oracle_queue",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_fee",
+      "discriminator": [
+        18,
+        154,
+        24,
+        18,
+        237,
+        214,
+        19,
+        80
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "create_lobby",
+      "discriminator": [
+        116,
+        55,
+        74,
+        48,
+        40,
+        51,
+        135,
+        155
+      ],
+      "accounts": [
+        {
+          "name": "result_authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "lobby",
+          "writable": true
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "oracle_queue",
+          "writable": true
+        },
+        {
+          "name": "program_identity"
+        },
+        {
+          "name": "slot_hashes",
+          "address": "SysvarS1otHashes111111111111111111111111111"
+        },
+        {
+          "name": "vrf_program",
+          "address": "Vrf1RNUjXmQGjmQrQLvJHs9SNkvDJEsRVFPkfSQUwGz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "lobby_id",
+          "type": "u64"
+        },
+        {
+          "name": "size",
+          "type": "u8"
+        },
+        {
+          "name": "entry_fee",
+          "type": "u64"
+        },
+        {
+          "name": "client_seed",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "fulfill_round",
+      "discriminator": [
+        69,
+        99,
+        85,
+        160,
+        26,
+        234,
+        79,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "vrf_program_identity",
+          "signer": true
+        },
+        {
+          "name": "lobby",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "randomness",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "join_lobby",
+      "discriminator": [
+        127,
+        102,
+        119,
+        190,
+        215,
+        223,
+        212,
+        159
+      ],
+      "accounts": [
+        {
+          "name": "player",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "lobby",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "lobby_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "submit_result",
+      "discriminator": [
+        240,
+        42,
+        89,
+        180,
+        10,
+        239,
+        9,
+        214
+      ],
+      "accounts": [
+        {
+          "name": "result_authority",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "lobby",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "player",
+          "type": "pubkey"
+        },
+        {
+          "name": "poured_ml",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "settle_lobby",
+      "discriminator": [
+        207,
+        75,
+        50,
+        251,
+        99,
+        177,
+        195,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "result_authority",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "lobby",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "global_stats",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "cancel_lobby",
+      "discriminator": [
+        241,
+        47,
+        118,
+        95,
+        81,
+        67,
+        137,
+        13
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "lobby",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "GlobalStats",
+      "discriminator": [
+        119,
+        53,
+        78,
+        3,
+        254,
+        129,
+        78,
+        28
+      ]
+    },
+    {
+      "name": "Lobby",
+      "discriminator": [
+        167,
+        194,
+        217,
+        163,
+        92,
+        92,
+        103,
+        49
+      ]
+    }
+  ],
+  "types": [
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "result_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "oracle_queue",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "allowed_entry_fees",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalStats",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "total_games_settled",
+            "type": "u64"
+          },
+          {
+            "name": "total_volume_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "total_fees_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LobbyStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "AwaitingRandomness"
+          },
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Settled"
+          },
+          {
+            "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlayerEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "poured_ml",
+            "type": "u32"
+          },
+          {
+            "name": "has_played",
+            "type": "bool"
+          },
+          {
+            "name": "submission_index",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Lobby",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lobby_id",
+            "type": "u64"
+          },
+          {
+            "name": "size",
+            "type": "u8"
+          },
+          {
+            "name": "entry_fee",
+            "type": "u64"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "LobbyStatus"
+              }
+            }
+          },
+          {
+            "name": "randomness",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "target_ml",
+            "type": "u32"
+          },
+          {
+            "name": "pressure_milli",
+            "type": "u16"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "players",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "PlayerEntry"
+                }
+              }
+            }
+          },
+          {
+            "name": "joined_count",
+            "type": "u8"
+          },
+          {
+            "name": "played_count",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

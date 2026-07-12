@@ -1,0 +1,30 @@
+# Node
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+
+# Anchor / Rust
+program/target/
+program/.anchor/
+program/test-ledger/
+.anchor/
+target/
+
+# Env & secrets
+.env
+.env.local
+.env*.local
+*-keypair.json
+!program/**/idl/**
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Misc
+.DS_Store
+*.log
+server/data/
+
+# Original attachment archive (contents live in docs/)
+files.zip

@@ -1,0 +1,63 @@
+name: node
+
+# CI für die pnpm-Workspace-Pakete (server/, web/) bei jedem Push und PR:
+# Typecheck + Unit-Tests für @zapf/server, Production-Build für @zapf/web.
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: node-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: server typecheck+test, web build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: pnpm via corepack aktivieren
+        # Version kommt aus dem "packageManager"-Feld im Root-package.json.
+        run: corepack enable
+
+      - name: pnpm-Store-Pfad ermitteln
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: pnpm-Store cachen
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: pnpm install
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            pnpm install --no-frozen-lockfile
+          fi
+
+      - name: "@zapf/server: typecheck"
+        run: pnpm --filter @zapf/server typecheck
+
+      - name: "@zapf/server: test (vitest, ohne Netzwerk/Chain)"
+        run: pnpm --filter @zapf/server test
+
+      - name: "@zapf/web: build (Next.js)"
+        env:
+          # Dummy-Werte — NEXT_PUBLIC_* wird zur Buildzeit ins Client-Bundle
+          # eingebacken; für den CI-Build reichen Platzhalter.
+          NEXT_PUBLIC_SERVER_URL: "https://zapf-server.example.invalid"
+          NEXT_PUBLIC_RPC_URL: "https://api.devnet.solana.com"
+          NEXT_PUBLIC_PROGRAM_ID: "11111111111111111111111111111111"
+        run: pnpm --filter @zapf/web build

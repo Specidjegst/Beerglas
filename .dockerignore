@@ -1,0 +1,17 @@
+# Build-Kontext-Ignore für server/Dockerfile (Kontext = Repo-Root).
+.git
+.github
+.claude
+docs
+program
+web
+files.zip
+**/node_modules
+**/dist
+**/.next
+**/data
+**/coverage
+.env
+.env.*
+*.log
+*.tsbuildinfo

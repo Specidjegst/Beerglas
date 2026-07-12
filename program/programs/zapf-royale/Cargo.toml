@@ -1,0 +1,27 @@
+[package]
+name = "zapf-royale"
+version = "0.1.0"
+description = "ZAPF ROYALE — PvP Bierzapf-Spiel auf Solana (devnet)"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "zapf_royale"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+# TEST-ONLY: erlaubt in fulfill_round zusätzlich config.result_authority als
+# Signer, damit die bankrun-Tests den VRF-Oracle-Callback simulieren können,
+# und überspringt den VRF-CPI in create_lobby (das VRF-Programm existiert in
+# bankrun nicht). NIEMALS im Release-/Deploy-Build aktivieren!
+test-vrf = []
+
+[dependencies]
+anchor-lang = "0.31.1"
+# anchor-compat = Support für anchor-lang >=0.28,<1.0 (passend zu 0.31.1).
+ephemeral-vrf-sdk = { version = "0.4.1", features = ["anchor-compat"] }
