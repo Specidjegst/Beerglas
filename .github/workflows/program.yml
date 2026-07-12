@@ -23,6 +23,10 @@ env:
   # auf eine konkrete Version pinnen, z. B. "v2.1.21".
   SOLANA_VERSION: "stable"
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   build-and-test:
     name: anchor build + test (bankrun)
@@ -100,14 +104,44 @@ jobs:
             CARGO_ARGS="-- --features test-vrf"
             echo "test-vrf-Feature erkannt — baue mit ${CARGO_ARGS}"
           fi
-          anchor build ${CARGO_ARGS}
+          set -o pipefail
+          anchor build ${CARGO_ARGS} 2>&1 | tee /tmp/ci-step.log
 
       - name: anchor test (bankrun, ohne Validator/Deploy)
         # Führt das bankrun-Testscript direkt aus (ts-mocha gegen
         # solana-bankrun). Die Tests laden target/deploy/zapf_royale.so direkt,
         # daher braucht es weder solana-test-validator noch einen Deploy —
         # und kein Risiko, dass "anchor test" gegen provider.cluster=devnet läuft.
-        run: npm run test:bankrun
+        run: |
+          set -o pipefail
+          npm run test:bankrun 2>&1 | tee /tmp/ci-step.log
+
+      - name: Fehler-Log als Check-Run veröffentlichen
+        # GitHub-Actions-Logs sind nur authentifiziert abrufbar; Check-Runs
+        # eines öffentlichen Repos dagegen auch anonym. Bei einem Fehlschlag
+        # landet der Log-Tail daher hier — lesbar über
+        # GET /repos/<owner>/<repo>/commits/<sha>/check-runs.
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            let log = "";
+            try { log = fs.readFileSync("/tmp/ci-step.log", "utf8"); } catch {}
+            const tail = log.slice(-60000) || "(kein Log gefunden)";
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "program-failure-log",
+              head_sha: context.sha,
+              status: "completed",
+              conclusion: "neutral",
+              output: {
+                title: "Log-Tail des fehlgeschlagenen Schritts",
+                summary: "Automatisch veröffentlicht, damit Fehler ohne Log-Auth lesbar sind.",
+                text: "```\n" + tail + "\n```",
+              },
+            });
 
       - name: Artefakte hochladen (.so + IDL + Types)
         uses: actions/upload-artifact@v4
