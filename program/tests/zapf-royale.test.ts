@@ -172,10 +172,9 @@ describe("zapf_royale", () => {
         executable: false,
       },
     }));
-    // Fake-Account an der VRF-Programm-Adresse (executable), damit Anchors
-    // Program<VrfProgram>-Check (Adresse + executable-Flag) in create_lobby
-    // besteht. Der eigentliche CPI ist im test-vrf-Build deaktiviert, der
-    // Account wird also nie ausgeführt.
+    // Fake-Account an der VRF-Programm-Adresse, damit der address-Constraint
+    // (VRF_PROGRAM_ID) in create_lobby besteht. Der eigentliche CPI ist im
+    // test-vrf-Build deaktiviert, der Account wird also nie ausgeführt.
     preloaded.push({
       address: VRF_PROGRAM_ID,
       info: {

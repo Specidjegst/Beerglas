@@ -48,4 +48,6 @@ pub enum ZapfError {
     UnauthorizedVrfCallback, // 6020
     #[msg("Oracle queue account does not match config.oracle_queue")]
     InvalidOracleQueue, // 6021
+    #[msg("VRF program account does not match the Ephemeral VRF program id")]
+    InvalidVrfProgram, // 6022
 }

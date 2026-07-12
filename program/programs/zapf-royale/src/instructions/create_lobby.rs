@@ -10,13 +10,12 @@ use anchor_lang::solana_program::program::invoke_signed;
 use anchor_lang::solana_program::sysvar::slot_hashes;
 use anchor_lang::Discriminator;
 
-use ephemeral_vrf_sdk::anchor::VrfProgram;
 use ephemeral_vrf_sdk::consts::IDENTITY;
 use ephemeral_vrf_sdk::instructions::{create_request_randomness_ix, RequestRandomnessParams};
 use ephemeral_vrf_sdk::types::SerializableAccountMeta;
 
 use crate::constants::{
-    CONFIG_SEED, LOBBY_SEED, MAX_LOBBY_SIZE, MIN_LOBBY_SIZE, VAULT_SEED,
+    CONFIG_SEED, LOBBY_SEED, MAX_LOBBY_SIZE, MIN_LOBBY_SIZE, VAULT_SEED, VRF_PROGRAM_ID,
 };
 use crate::errors::ZapfError;
 use crate::events::LobbyCreated;
@@ -71,8 +70,13 @@ pub struct CreateLobby<'info> {
     #[account(address = slot_hashes::ID)]
     pub slot_hashes: AccountInfo<'info>,
 
-    /// Das Ephemeral-VRF-Programm (Vrf1RNUjXmQGjmQrQLvJHs9SNkvDJEsRVFPkfSQUwGz).
-    pub vrf_program: Program<'info, VrfProgram>,
+    /// CHECK: Das Ephemeral-VRF-Programm (Vrf1RNUjXmQGjmQrQLvJHs9SNkvDJEsRVFPkfSQUwGz).
+    /// Adresse wird gegen die lokale Konstante geprüft; bewusst kein
+    /// `Program<VrfProgram>` aus dem SDK — dessen anchor-lang-Version weicht
+    /// von unserer ab, wodurch der `Id`-Trait nicht typkompatibel ist. Den
+    /// Executable-Check übernimmt die Runtime beim CPI.
+    #[account(address = VRF_PROGRAM_ID @ ZapfError::InvalidVrfProgram)]
+    pub vrf_program: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
 }

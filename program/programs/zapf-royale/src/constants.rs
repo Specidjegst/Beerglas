@@ -39,6 +39,14 @@ pub const PRESSURE_MIN_MILLI: u32 = 800;
 /// Spannweite des Fassdrucks in Milli-Einheiten: pressure_milli ∈ 800..=1300.
 pub const PRESSURE_SPAN_MILLI: u32 = 500;
 
+/// Programm-ID des MagicBlock Ephemeral VRF (devnet + mainnet).
+/// Bewusst als lokale Konstante statt über SDK-Typen (`VrfProgram`), um
+/// Konflikte zwischen anchor-lang-Versionen im Dependency-Graph zu vermeiden:
+/// das SDK bindet sein eigenes anchor-lang (>=0.28,<1.0), dessen `Id`-Trait
+/// mit unserem 0.31-`Program<...>`-Wrapper nicht typkompatibel ist (E0277).
+pub const VRF_PROGRAM_ID: Pubkey =
+    anchor_lang::solana_program::pubkey!("Vrf1RNUjXmQGjmQrQLvJHs9SNkvDJEsRVFPkfSQUwGz");
+
 /// Identity-Signer des Ephemeral-VRF-Programms (globaler Identity-PDA).
 /// Nur dieser Signer darf `fulfill_round` aufrufen.
 ///
