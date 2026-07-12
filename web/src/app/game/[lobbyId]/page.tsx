@@ -25,7 +25,7 @@ import { useGameSocket } from "@/hooks/useGameSocket";
 import { buildJoinLobbyTransaction } from "@/lib/anchorClient";
 import { loginMessage, requestNonce, verifyLogin } from "@/lib/api";
 import { fmtSol } from "@/lib/format";
-import { LOBBY_SIZE } from "@/lib/constants";
+import { DEMO_MODE, LOBBY_SIZE } from "@/lib/constants";
 
 export default function GamePage() {
   const params = useParams<{ lobbyId: string }>();
@@ -104,6 +104,12 @@ export default function GamePage() {
     setJoinBusy(true);
     setFlowError(null);
     try {
+      if (DEMO_MODE) {
+        // Testphase: keine On-Chain-Transaktion — der Mock-Server (CHAIN=mock)
+        // akzeptiert jede Signatur. Kein Entry-Fee-Transfer, reiner UI-/Flow-Test.
+        setJoinSig(`demo-${publicKey.toBase58().slice(0, 8)}-${Date.now()}`);
+        return;
+      }
       const idNum = BigInt(lobbyId);
       const tx = await buildJoinLobbyTransaction(connection, idNum, publicKey);
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
@@ -242,11 +248,15 @@ export default function GamePage() {
             <button className="hold-btn" onClick={() => void doJoin()} disabled={joinBusy}>
               {joinBusy
                 ? "TRANSAKTION LÄUFT …"
-                : `EINSATZ ZAHLEN · ${fmtSol(lobbyState?.entryFeeLamports ?? 0)}`}
+                : DEMO_MODE
+                  ? "MITSPIELEN (DEMO — KEIN EINSATZ)"
+                  : `EINSATZ ZAHLEN · ${fmtSol(lobbyState?.entryFeeLamports ?? 0)}`}
             </button>
             <div className="msg">
               <span className={`ws-dot${socket.status === "open" ? " open" : ""}`} />
-              Einsatz geht in den Lobby-Vault (on-chain, devnet).
+              {DEMO_MODE
+                ? "Demo-Modus: Testphase ohne echte Transaktion."
+                : "Einsatz geht in den Lobby-Vault (on-chain, devnet)."}
             </div>
           </div>
         ) : flowStep === "waiting" ? (

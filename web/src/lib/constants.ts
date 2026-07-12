@@ -47,6 +47,15 @@ export const RPC_URL: string =
 export const PROGRAM_ID_STR: string =
   process.env.NEXT_PUBLIC_PROGRAM_ID ?? "11111111111111111111111111111111";
 
+/**
+ * Demo-Modus (Testphase): überspringt die On-Chain-Join-Transaktion und
+ * meldet sich mit einer Fake-Signatur beim Server — funktioniert nur, wenn
+ * der Server mit CHAIN=mock läuft (der Mock akzeptiert jede txSig).
+ * Wallet-Login (Sign-Message, gebührenfrei) und der komplette Spielablauf
+ * bleiben unverändert. NIEMALS gegen einen CHAIN=anchor-Server verwenden.
+ */
+export const DEMO_MODE: boolean = process.env.NEXT_PUBLIC_DEMO_MODE === "1";
+
 /** WebSocket-URL des Game-Servers, aus SERVER_URL abgeleitet (http→ws). */
 export function wsUrl(): string {
   return SERVER_URL.replace(/^http/, "ws").replace(/\/+$/, "") + "/ws";
