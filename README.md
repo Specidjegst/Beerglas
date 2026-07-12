@@ -184,8 +184,13 @@ Einmalig die Config anlegen: `fee_bps = 400`, Treasury-Pubkey,
 
 Beide Deployments laufen als **zwei Services im selben Railway-Projekt**,
 jeweils aus diesem Repo. Die Service-Konfigurationen liegen als
-Config-as-Code im Repo: [`server/railway.json`](server/railway.json) und
-[`web/railway.json`](web/railway.json).
+Config-as-Code im Repo: [`railway.json`](railway.json) im Root (= Server,
+wird von Railway **automatisch** gefunden — keine Dashboard-Einstellung
+nötig) sowie [`server/railway.json`](server/railway.json) und
+[`web/railway.json`](web/railway.json) für explizite Zuordnung pro Service.
+Der **Web-Service** muss auf seine Config zeigen: *Settings →
+Config-as-code → `web/railway.json`* — oder alternativ einfach die
+Service-Variable `RAILWAY_DOCKERFILE_PATH=web/Dockerfile` setzen.
 
 **Service 1 — Game-Server:** Build über `server/Dockerfile` (Multi-Stage,
 non-root, Port 8787), Healthcheck auf **`/health`**, Restart-Policy
