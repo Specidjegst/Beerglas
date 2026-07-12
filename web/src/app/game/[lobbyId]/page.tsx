@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { Keypair } from "@solana/web3.js";
+import nacl from "tweetnacl";
 import bs58 from "bs58";
 import TapScene from "@/components/TapScene";
 import PlayerChips from "@/components/PlayerChips";
@@ -34,7 +36,12 @@ export default function GamePage() {
 
   const { connection } = useConnection();
   const { publicKey, connected, signMessage, sendTransaction } = useWallet();
-  const myWallet = publicKey ? publicKey.toBase58() : null;
+
+  // Gast-Identität (nur DEMO_MODE): flüchtiges Keypair im Speicher, signiert
+  // den Login lokal — kein Wallet, kein SOL, keine Extension nötig.
+  const [guest, setGuest] = useState<Keypair | null>(null);
+  const activePubkey = publicKey ?? guest?.publicKey ?? null;
+  const myWallet = activePubkey ? activePubkey.toBase58() : null;
 
   // ── Auth ────────────────────────────────────────────────────────────
   const [token, setToken] = useState<string | null>(null);
@@ -99,17 +106,40 @@ export default function GamePage() {
     }
   }, [publicKey, signMessage]);
 
+  /** Gast-Login (DEMO_MODE): Keypair erzeugen und Nonce lokal signieren. */
+  const doGuestLogin = useCallback(async () => {
+    setAuthBusy(true);
+    setFlowError(null);
+    try {
+      const kp = guest ?? Keypair.generate();
+      if (!guest) setGuest(kp);
+      const wallet = kp.publicKey.toBase58();
+      const nonce = await requestNonce(wallet);
+      const sigBytes = nacl.sign.detached(
+        new TextEncoder().encode(loginMessage(nonce)),
+        kp.secretKey,
+      );
+      const newToken = await verifyLogin(wallet, nonce, bs58.encode(sigBytes));
+      setToken(newToken);
+    } catch (e) {
+      setFlowError(e instanceof Error ? e.message : "Gast-Login fehlgeschlagen.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }, [guest]);
+
   const doJoin = useCallback(async () => {
-    if (!publicKey) return;
+    if (!activePubkey) return;
     setJoinBusy(true);
     setFlowError(null);
     try {
       if (DEMO_MODE) {
         // Testphase: keine On-Chain-Transaktion — der Mock-Server (CHAIN=mock)
         // akzeptiert jede Signatur. Kein Entry-Fee-Transfer, reiner UI-/Flow-Test.
-        setJoinSig(`demo-${publicKey.toBase58().slice(0, 8)}-${Date.now()}`);
+        setJoinSig(`demo-${activePubkey.toBase58().slice(0, 8)}-${Date.now()}`);
         return;
       }
+      if (!publicKey) throw new Error("Ohne Wallet nur im Demo-Modus spielbar.");
       const idNum = BigInt(lobbyId);
       const tx = await buildJoinLobbyTransaction(connection, idNum, publicKey);
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
@@ -178,7 +208,7 @@ export default function GamePage() {
     (lobbyState?.status ?? "").toLowerCase() === "awaiting_randomness";
 
   let flowStep: "connect" | "login" | "vrf" | "join" | "waiting" | "play" = "play";
-  if (!connected) flowStep = "connect";
+  if (!connected && !guest) flowStep = "connect";
   else if (!token) flowStep = "login";
   else if (!joined && awaitingRandomness) flowStep = "vrf";
   else if (!joined) flowStep = "join";
@@ -222,7 +252,20 @@ export default function GamePage() {
       <div className="controls">
         {flowStep === "connect" ? (
           <div className="flow-panel">
-            <div className="msg">Wallet verbinden, um mitzuzapfen (Phantom / Solflare, devnet)</div>
+            {DEMO_MODE ? (
+              <>
+                <button
+                  className="hold-btn"
+                  onClick={() => void doGuestLogin()}
+                  disabled={authBusy}
+                >
+                  {authBusy ? "ANMELDEN …" : "ALS GAST ZAPFEN (DEMO)"}
+                </button>
+                <div className="msg">Testphase: ohne Wallet spielen — oder unten Wallet verbinden.</div>
+              </>
+            ) : (
+              <div className="msg">Wallet verbinden, um mitzuzapfen (Phantom / Solflare, devnet)</div>
+            )}
             <WalletButton />
           </div>
         ) : flowStep === "login" ? (
