@@ -148,14 +148,19 @@ export function useGameSocket(lobbyId: string, token: string | null): GameSocket
       }
       switch (msg.type) {
         case "lobby_state": {
-          const entry = num(msg.entryFeeLamports ?? msg.entryFee);
-          const players = parsePlayers(msg.players);
+          // Server nestet den Zustand unter "lobby" — beide Formen tolerieren.
+          const src =
+            typeof msg.lobby === "object" && msg.lobby !== null
+              ? (msg.lobby as Record<string, unknown>)
+              : msg;
+          const entry = num(src.entryFeeLamports ?? src.entryFee);
+          const players = parsePlayers(src.players);
           setLobbyState({
-            lobbyId: str(msg.lobbyId, lobbyId),
+            lobbyId: str(src.lobbyId, lobbyId),
             entryFeeLamports: entry,
-            potLamports: num(msg.potLamports ?? msg.pot, entry * players.length),
-            size: num(msg.size, 5),
-            status: str(msg.status, "open"),
+            potLamports: num(src.potLamports ?? src.pot, entry * players.length),
+            size: num(src.size, 5),
+            status: str(src.status, "open"),
             players,
           });
           break;
