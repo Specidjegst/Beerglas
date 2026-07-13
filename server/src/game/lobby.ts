@@ -33,10 +33,12 @@ import { generateClientSeed, toHex } from "./fairness.js";
 import {
   computeWinners,
   scoreOf,
+  simulatePour,
   splitPot,
   type PourOutcome,
   type ResultEntry,
 } from "./simulation.js";
+import { BASE_RATE_ML_S } from "./constants.js";
 
 /** How long createLobby/boot waits for the VRF callback before giving up. */
 const FULFILL_TIMEOUT_MS = 120_000;
@@ -68,6 +70,11 @@ export type PourFinalizer = (lobbyId: string, wallet: string, atTs: number) => P
 export interface LobbyManagerOptions {
   chain: ChainClient;
   store: JsonStore<LobbyStoreData>;
+  /** Anzahl Demo-Bots, die freie Plätze auffüllen, sobald ein Mensch joint.
+   *  NUR für CHAIN=mock gedacht — Bots zahlen keine echte Entry Fee. */
+  bots?: number;
+  /** Zeitfaktor für Bot-Join/-Pour-Verzögerungen (Tests: klein wählen). */
+  botSpeed?: number;
   lobbySize?: number;
   playTimeoutMs?: number;
   cancelAfterS?: number;
@@ -81,6 +88,8 @@ export class LobbyManager {
   private readonly chain: ChainClient;
   private readonly store: JsonStore<LobbyStoreData>;
   readonly lobbySize: number;
+  readonly botCount: number;
+  private readonly botSpeed: number;
   readonly playTimeoutMs: number;
   readonly cancelAfterS: number;
   readonly feeBps: number;
@@ -99,6 +108,8 @@ export class LobbyManager {
   constructor(opts: LobbyManagerOptions) {
     this.chain = opts.chain;
     this.store = opts.store;
+    this.botCount = Math.max(0, opts.bots ?? 0);
+    this.botSpeed = opts.botSpeed ?? 1;
     this.lobbySize = opts.lobbySize ?? LOBBY_SIZE;
     this.playTimeoutMs = opts.playTimeoutMs ?? PLAY_TIMEOUT_MS;
     this.cancelAfterS = opts.cancelAfterS ?? CANCEL_AFTER_S;
@@ -247,9 +258,10 @@ export class LobbyManager {
     const lobby = this.mustGet(lobbyId);
     // Joining is only possible once the VRF round is fulfilled (status open).
     if (lobby.status !== "open") throw new LobbyError("LOBBY_CLOSED", "lobby is not open");
-    if (lobby.players.some((p) => p.wallet === wallet)) {
-      throw new LobbyError("ALREADY_JOINED", "wallet already joined this lobby");
-    }
+    // Idempotent: a reconnecting client may repeat join_lobby and simply gets
+    // the same round config back (deadline unchanged, no second seat).
+    const existing = lobby.players.find((p) => p.wallet === wallet);
+    if (existing) return this.roundConfigFor(lobby, existing);
     if (lobby.players.length >= lobby.size) {
       throw new LobbyError("LOBBY_FULL", "lobby is full");
     }
@@ -259,9 +271,8 @@ export class LobbyManager {
 
     // Re-check after the async gap (double-join race on two sockets).
     if (lobby.status !== "open") throw new LobbyError("LOBBY_CLOSED", "lobby is not open");
-    if (lobby.players.some((p) => p.wallet === wallet)) {
-      throw new LobbyError("ALREADY_JOINED", "wallet already joined this lobby");
-    }
+    const raced = lobby.players.find((p) => p.wallet === wallet);
+    if (raced) return this.roundConfigFor(lobby, raced);
     if (lobby.players.length >= lobby.size) {
       throw new LobbyError("LOBBY_FULL", "lobby is full");
     }
@@ -279,6 +290,87 @@ export class LobbyManager {
     await this.persist();
     this.emitUpdate(lobby);
 
+    // Demo-Bots füllen freie Plätze auf, sobald ein Mensch drin ist.
+    this.scheduleBots(lobby);
+
+    return this.roundConfigFor(lobby, player);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Demo-Bots (nur CHAIN=mock): joinen zeitversetzt und zapfen mit realistischer
+  // Streuung — gute Schützen (~±90 ml) mit gelegentlichen Ausreißern.
+  // ---------------------------------------------------------------------------
+
+  private static readonly BOT_NAMES = ["Sepp", "Resi", "Xaver", "Vroni", "Girgl", "Zenzi", "Wastl", "Kathi", "Loisl"];
+
+  private scheduleBots(lobby: LobbyRecord): void {
+    if (this.botCount <= 0 || lobby.status !== "open") return;
+    if (!lobby.players.some((p) => !p.isBot)) return; // erst wenn ein Mensch joint
+    const existingBots = lobby.players.filter((p) => p.isBot).length;
+    const freeSeats = lobby.size - lobby.players.length;
+    const toAdd = Math.min(freeSeats, this.botCount - existingBots);
+
+    for (let i = 0; i < toAdd; i++) {
+      const name = LobbyManager.BOT_NAMES[(existingBots + i) % LobbyManager.BOT_NAMES.length];
+      const wallet = `BOT-${name}`;
+      const key = `bot-join:${lobby.lobbyId}:${wallet}`;
+      if (this.timers.has(key)) continue;
+      const joinDelay = (700 + Math.random() * 1800 + i * 900) * this.botSpeed;
+      const handle = setTimeout(() => {
+        this.timers.delete(key);
+        void this.botJoinAndPour(lobby.lobbyId, wallet).catch((err) =>
+          this.log(`bot ${wallet} failed in lobby ${lobby.lobbyId}`, err),
+        );
+      }, joinDelay);
+      handle.unref?.();
+      this.timers.set(key, handle);
+    }
+  }
+
+  private async botJoinAndPour(lobbyId: string, wallet: string): Promise<void> {
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby || lobby.status !== "open") return;
+    if (lobby.players.length >= lobby.size) return;
+    if (lobby.players.some((p) => p.wallet === wallet)) return;
+
+    const joinConfirmedAt = this.now();
+    const bot: PlayerRecord = {
+      wallet,
+      isBot: true,
+      joinTxSig: "bot",
+      joinConfirmedAt,
+      deadlineTs: joinConfirmedAt + this.playTimeoutMs,
+      status: "playing",
+    };
+    lobby.players.push(bot);
+    this.armTimer(lobby.lobbyId, bot); // Sicherheitsnetz: Timeout -> 0 ml
+    await this.persist();
+    this.emitUpdate(lobby);
+    this.scheduleBots(lobby); // ggf. weitere Plätze auffüllen
+
+    // Zapfen mit menschlicher Reaktionsstreuung.
+    const key = `bot-pour:${lobby.lobbyId}:${wallet}`;
+    const pourDelay = (1200 + Math.random() * 4000) * this.botSpeed;
+    const handle = setTimeout(() => {
+      this.timers.delete(key);
+      void (async () => {
+        const l = this.lobbies.get(lobbyId);
+        const p = l?.players.find((x) => x.wallet === wallet);
+        if (!l || !p || l.status !== "open" || p.status !== "playing") return;
+        const pressure = l.pressureMilli / 1000;
+        const idealMs = (l.targetMl / (BASE_RATE_ML_S * pressure)) * 1000;
+        // 15% Ausreißer (±600 ms), sonst ±180 ms Reaktionsfehler.
+        const spread = Math.random() < 0.15 ? 600 : 180;
+        const durationMs = Math.max(60, idealMs + (Math.random() * 2 - 1) * spread);
+        const outcome = simulatePour(pressure, durationMs);
+        await this.recordResult(l, p, outcome, false);
+      })().catch((err) => this.log(`bot pour failed for ${wallet}`, err));
+    }, pourDelay);
+    handle.unref?.();
+    this.timers.set(key, handle);
+  }
+
+  private roundConfigFor(lobby: LobbyRecord, player: PlayerRecord): RoundConfigMessagePayload {
     return {
       lobbyId: lobby.lobbyId,
       targetMl: lobby.targetMl,
@@ -537,6 +629,7 @@ export class LobbyManager {
         const status: PlayerPublicStatus = p.status === "done" ? "fertig" : "spielt";
         return {
           wallet: p.wallet,
+          isBot: p.isBot === true,
           status,
           pouredMl: revealed
             ? p.overflow

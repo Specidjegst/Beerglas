@@ -37,7 +37,7 @@ export default function PlayerChips({ players, size = LOBBY_SIZE, myWallet }: Pl
         const me = myWallet !== null && myWallet !== undefined && p.wallet === myWallet;
         return (
           <div className={`chip${me ? " me" : ""}`} key={p.wallet}>
-            {shortAddress(p.wallet)}
+            {p.isBot ? `🤖 ${p.wallet.replace(/^BOT-/, "")}` : shortAddress(p.wallet)}
             <span className="st">
               {me && p.status === "waiting" ? "DU BIST DRAN" : (STATUS_LABEL[p.status] ?? p.status)}
             </span>

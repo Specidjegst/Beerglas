@@ -10,6 +10,7 @@ import { fetchLobbies, type LobbySummary } from "@/lib/api";
 import { fmtSol } from "@/lib/format";
 import { SERVER_URL } from "@/lib/constants";
 import LobbyCard from "@/components/LobbyCard";
+import HowToPlay from "@/components/HowToPlay";
 import { WalletButton } from "@/components/WalletProviders";
 
 export default function LobbyListPage() {
@@ -83,6 +84,8 @@ export default function LobbyListPage() {
             ))}
           </div>
         )}
+
+        <HowToPlay />
       </div>
     </>
   );

@@ -24,6 +24,8 @@ export type PlayerStatus = "waiting" | "pouring" | "done";
 
 export interface PlayerState {
   wallet: string;
+  /** Server-gesteuerter Demo-Mitspieler (Testphase). */
+  isBot?: boolean;
   status: PlayerStatus;
   pouredMl?: number;
   overflow?: boolean;
@@ -79,11 +81,17 @@ function parsePlayers(v: unknown): PlayerState[] {
     const wallet = str(o.wallet ?? o.player ?? o.pubkey);
     if (!wallet) return [];
     const rawStatus = str(o.status, "waiting");
+    // Server sendet deutsche Labels (spielt/fertig) — beide Formen mappen.
     const status: PlayerStatus =
-      rawStatus === "pouring" || rawStatus === "done" ? rawStatus : "waiting";
+      rawStatus === "pouring" || rawStatus === "spielt"
+        ? "pouring"
+        : rawStatus === "done" || rawStatus === "fertig"
+          ? "done"
+          : "waiting";
     return [
       {
         wallet,
+        isBot: o.isBot === true,
         status: o.hasPlayed === true ? "done" : status,
         pouredMl: o.pouredMl !== undefined ? num(o.pouredMl) : undefined,
         overflow: typeof o.overflow === "boolean" ? o.overflow : undefined,
@@ -104,6 +112,9 @@ export interface GameSocket {
   pourResult: PourResult | null;
   settled: SettledInfo | null;
   lastError: string | null;
+  /** Join-Handshake: {type:"join_lobby", lobbyId, txSig} — Antwort ist round_config.
+   *  Wird nach jedem Reconnect automatisch wiederholt (Server ist idempotent). */
+  sendJoin: (txSig: string) => void;
   sendPourStart: () => void;
   sendPourStop: () => void;
 }
@@ -118,6 +129,8 @@ export function useGameSocket(lobbyId: string, token: string | null): GameSocket
 
   const wsRef = useRef<WebSocket | null>(null);
   const retryRef = useRef(0);
+  /** txSig des Joins — wird bei jedem (Re-)Connect erneut angemeldet. */
+  const joinTxRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!token || !lobbyId) return;
@@ -197,6 +210,9 @@ export function useGameSocket(lobbyId: string, token: string | null): GameSocket
         setStatus("open");
         ws.send(JSON.stringify({ type: "hello", token }));
         ws.send(JSON.stringify({ type: "watch_lobby", lobbyId }));
+        if (joinTxRef.current) {
+          ws.send(JSON.stringify({ type: "join_lobby", lobbyId, txSig: joinTxRef.current }));
+        }
       };
       ws.onmessage = (ev: MessageEvent) => {
         if (typeof ev.data === "string") handleMessage(ev.data);
@@ -239,6 +255,13 @@ export function useGameSocket(lobbyId: string, token: string | null): GameSocket
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
   }, []);
 
+  const sendJoin = useCallback(
+    (txSig: string) => {
+      joinTxRef.current = txSig;
+      send({ type: "join_lobby", lobbyId, txSig });
+    },
+    [send, lobbyId],
+  );
   const sendPourStart = useCallback(() => send({ type: "pour_start" }), [send]);
   const sendPourStop = useCallback(() => send({ type: "pour_stop" }), [send]);
 
@@ -249,6 +272,7 @@ export function useGameSocket(lobbyId: string, token: string | null): GameSocket
     pourResult,
     settled,
     lastError,
+    sendJoin,
     sendPourStart,
     sendPourStop,
   };

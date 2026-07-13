@@ -19,6 +19,9 @@ export interface ServerConfig {
   /** MagicBlock Ephemeral VRF oracle queue (ENV ORACLE_QUEUE; devnet default). */
   oracleQueue: PublicKey;
   lobbySize: number;
+  /** Demo-Bots pro Lobby (füllen freie Plätze, sobald ein Mensch joint).
+   *  Wird nur im Mock-Modus wirksam — Bots zahlen keine echte Entry Fee. */
+  bots: number;
   defaultEntryFeeLamports: bigint;
   authSecret: Buffer;
 }
@@ -74,6 +77,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
         : DEFAULT_ORACLE_QUEUE,
     ),
     lobbySize: Number(env.LOBBY_SIZE ?? LOBBY_SIZE),
+    bots: chain === "mock" ? Math.max(0, Number(env.BOTS ?? 0) || 0) : 0,
     defaultEntryFeeLamports: BigInt(env.DEFAULT_ENTRY_FEE_LAMPORTS ?? "50000000"),
     authSecret:
       env.AUTH_SECRET && env.AUTH_SECRET.trim() !== ""

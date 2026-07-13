@@ -10,6 +10,8 @@ export type PlayerPublicStatus = "wartet" | "spielt" | "fertig";
 
 export interface PlayerRecord {
   wallet: string;
+  /** Server-gesteuerter Demo-Mitspieler (nur CHAIN=mock). */
+  isBot?: boolean;
   joinTxSig: string;
   /** Server clock (ms) when the join tx was confirmed; the 60s timer starts here. */
   joinConfirmedAt: number;
@@ -74,6 +76,8 @@ export interface LobbyPublicState {
   createdAt: number;
   players: {
     wallet: string;
+    /** Server-gesteuerter Demo-Mitspieler (UI zeigt "BOT"-Label). */
+    isBot: boolean;
     status: PlayerPublicStatus;
     /** Only revealed after settlement (sentinel for overflow). */
     pouredMl: number | null;

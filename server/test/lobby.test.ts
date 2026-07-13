@@ -100,14 +100,53 @@ describe("LobbyManager", () => {
     expect([500, 1000, 1500]).toContain(lobby.targetMl);
   });
 
-  it("rejects a double join of the same wallet", async () => {
+  it("treats a double join of the same wallet as idempotent (same round config, one seat)", async () => {
     manager = makeManager(60_000);
     await manager.init();
     const lobby = await manager.createLobby(ENTRY_FEE);
-    await manager.confirmJoin(lobby.lobbyId, W[0]!, "sig-1");
-    await expect(manager.confirmJoin(lobby.lobbyId, W[0]!, "sig-2")).rejects.toMatchObject({
-      code: "ALREADY_JOINED",
+    const first = await manager.confirmJoin(lobby.lobbyId, W[0]!, "sig-1");
+    // Reconnects wiederholen join_lobby — gleiche Config zurück, keine zweite Teilnahme.
+    const second = await manager.confirmJoin(lobby.lobbyId, W[0]!, "sig-2");
+    expect(second).toEqual(first);
+    expect(manager.getLobby(lobby.lobbyId)!.players).toHaveLength(1);
+  });
+
+  it("bots fill the remaining seats after a human joins and the lobby settles", async () => {
+    manager = new LobbyManager({
+      chain,
+      store: new JsonStore<LobbyStoreData>(path.join(dir, "lobbies.json")),
+      lobbySize: 3,
+      bots: 2,
+      botSpeed: 0.01, // Delays auf ~1% stauchen, damit der Test schnell bleibt
+      playTimeoutMs: 60_000,
+      log: () => undefined,
     });
+    await manager.init();
+    const lobby = await manager.createLobby(ENTRY_FEE);
+
+    await manager.confirmJoin(lobby.lobbyId, W[0]!, "sig-1");
+    await manager.submitPour(lobby.lobbyId, W[0]!, {
+      pouredMl: lobby.targetMl,
+      foamMl: 50,
+      overflow: false,
+    });
+
+    // Bots joinen und zapfen zeitversetzt; danach settelt die Lobby automatisch.
+    let settled = false;
+    manager.onSettled(() => {
+      settled = true;
+    });
+    for (let i = 0; i < 100 && !settled; i++) await sleep(20);
+
+    const done = manager.getLobby(lobby.lobbyId)!;
+    expect(done.status).toBe("settled");
+    expect(done.players).toHaveLength(3);
+    const bots = done.players.filter((p) => p.isBot);
+    expect(bots).toHaveLength(2);
+    expect(bots.every((b) => b.status === "done")).toBe(true);
+    expect(bots.every((b) => b.wallet.startsWith("BOT-"))).toBe(true);
+    // Bots tauchen im Public State mit isBot-Flag auf (UI-Label).
+    expect(manager.publicState(done).players.filter((p) => p.isBot)).toHaveLength(2);
   });
 
   it("rejects a join whose transaction cannot be confirmed", async () => {

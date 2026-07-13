@@ -31,7 +31,12 @@ async function main(): Promise<void> {
 
   const store = new JsonStore<LobbyStoreData>(path.join(cfg.dataDir, "lobbies.json"));
   const nonceStore = new JsonStore<NonceStoreData>(path.join(cfg.dataDir, "nonces.json"));
-  const lobbies = new LobbyManager({ chain, store, lobbySize: cfg.lobbySize });
+  const lobbies = new LobbyManager({
+    chain,
+    store,
+    lobbySize: cfg.lobbySize,
+    bots: cfg.bots,
+  });
   const pours = new PourSessionManager(lobbies);
   const auth = new AuthService(cfg.authSecret, undefined, undefined, nonceStore);
 

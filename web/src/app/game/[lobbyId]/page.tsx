@@ -26,7 +26,7 @@ import { WalletButton } from "@/components/WalletProviders";
 import { useGameSocket } from "@/hooks/useGameSocket";
 import { buildJoinLobbyTransaction } from "@/lib/anchorClient";
 import { fetchServerChainMode, loginMessage, requestNonce, verifyLogin } from "@/lib/api";
-import { fmtSol } from "@/lib/format";
+import { fmtL, fmtSol } from "@/lib/format";
 import { DEMO_MODE, LOBBY_SIZE } from "@/lib/constants";
 
 export default function GamePage() {
@@ -73,7 +73,16 @@ export default function GamePage() {
   const pouringRef = useRef(false);
 
   const socket = useGameSocket(lobbyId, token);
-  const { lobbyState, roundConfig, pourResult, settled, sendPourStart, sendPourStop } = socket;
+  const { lobbyState, roundConfig, pourResult, settled, sendJoin, sendPourStart, sendPourStop } =
+    socket;
+
+  // Join-Handshake: sobald eine Join-Signatur vorliegt und der Socket offen
+  // ist, beim Server anmelden (Antwort: round_config). Idempotent — deckt
+  // auch den Fall ab, dass der Socket erst nach doJoin aufgeht.
+  useEffect(() => {
+    if (joinSig && socket.status === "open" && !roundConfig) sendJoin(joinSig);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joinSig, socket.status]);
 
   // Wallet-Wechsel ⇒ Session verwerfen
   useEffect(() => {
@@ -247,11 +256,17 @@ export default function GamePage() {
       <PlayerChips players={lobbyState?.players ?? []} size={size} myWallet={myWallet} />
 
       {roundConfig && !played && !expired ? (
-        <Countdown deadlineTs={roundConfig.deadlineTs} onExpire={onExpire} />
+        <>
+          <div className="target-banner">
+            🎯 DEIN ZIEL: <b>{fmtL(roundConfig.targetMl)}</b> — genau an der leuchtenden Marke
+            loslassen!
+          </div>
+          <Countdown deadlineTs={roundConfig.deadlineTs} onExpire={onExpire} />
+        </>
       ) : null}
 
       <TapScene
-        targetMl={roundConfig?.targetMl ?? 1000}
+        targetMl={roundConfig?.targetMl ?? null}
         pressure={roundConfig?.pressure ?? 1}
         pouring={pouring}
         locked={locked}

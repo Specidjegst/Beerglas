@@ -51,7 +51,9 @@ interface Splash {
 }
 
 export interface TapSceneProps {
-  targetMl: number;
+  /** Ziel-Marke in ml — null solange die Runde noch nicht ausgelost ist
+   *  (HUD zeigt dann "?" und keine Marke leuchtet). */
+  targetMl: number | null;
   pressure: number;
   /** true, solange der Spieler den Zapfhahn hält (Server bekommt pour_start/stop separat) */
   pouring: boolean;
@@ -334,7 +336,7 @@ export default function TapScene({
       <div className="hud">
         <div className="target-hud">
           <div className="lbl">ZIEL</div>
-          <div className="val">{fmtL(targetMl)}</div>
+          <div className="val">{targetMl !== null ? fmtL(targetMl) : "?"}</div>
         </div>
         <div className="gauge-wrap">
           <svg width="74" height="52" viewBox="0 0 74 52">
