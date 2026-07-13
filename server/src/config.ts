@@ -77,7 +77,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
         : DEFAULT_ORACLE_QUEUE,
     ),
     lobbySize: Number(env.LOBBY_SIZE ?? LOBBY_SIZE),
-    bots: chain === "mock" ? Math.max(0, Number(env.BOTS ?? 0) || 0) : 0,
+    // Testphase: im Mock-Modus standardmäßig 2 Bots (ENV BOTS überschreibt;
+    // BOTS=0 schaltet sie aus). Auf anchor immer 0 — Bots zahlen keine Fee.
+    bots: chain === "mock" ? Math.max(0, Number(env.BOTS ?? 2) || 0) : 0,
     defaultEntryFeeLamports: BigInt(env.DEFAULT_ENTRY_FEE_LAMPORTS ?? "50000000"),
     authSecret:
       env.AUTH_SECRET && env.AUTH_SECRET.trim() !== ""
