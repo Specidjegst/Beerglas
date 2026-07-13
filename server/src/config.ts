@@ -62,6 +62,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     throw new Error("PROGRAM_ID is required when CHAIN=anchor");
   }
 
+  // Testphase: im Mock-Modus standardmäßig 2 Bots (ENV BOTS überschreibt;
+  // BOTS=0 schaltet sie aus). Auf anchor immer 0 — Bots zahlen keine Fee.
+  const bots = chain === "mock" ? Math.max(0, Number(env.BOTS ?? 2) || 0) : 0;
+  // Mit Bots braucht es eine echte Wettbewerbs-Lobby: mindestens bots+1
+  // Plätze, sonst wäre der einzige menschliche Spieler immer der Sieger.
+  const lobbySize = Math.max(Number(env.LOBBY_SIZE ?? LOBBY_SIZE), bots > 0 ? bots + 1 : 1);
+
   return {
     port: Number(env.PORT ?? 8787),
     host: env.HOST ?? "0.0.0.0",
@@ -76,10 +83,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
         ? env.ORACLE_QUEUE.trim()
         : DEFAULT_ORACLE_QUEUE,
     ),
-    lobbySize: Number(env.LOBBY_SIZE ?? LOBBY_SIZE),
-    // Testphase: im Mock-Modus standardmäßig 2 Bots (ENV BOTS überschreibt;
-    // BOTS=0 schaltet sie aus). Auf anchor immer 0 — Bots zahlen keine Fee.
-    bots: chain === "mock" ? Math.max(0, Number(env.BOTS ?? 2) || 0) : 0,
+    lobbySize,
+    bots,
     defaultEntryFeeLamports: BigInt(env.DEFAULT_ENTRY_FEE_LAMPORTS ?? "50000000"),
     authSecret:
       env.AUTH_SECRET && env.AUTH_SECRET.trim() !== ""

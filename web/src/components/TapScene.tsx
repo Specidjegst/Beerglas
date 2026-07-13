@@ -65,6 +65,9 @@ export interface TapSceneProps {
   onLocalOverflow?: () => void;
   /** pointerdown auf der Bühne startet ebenfalls das Zapfen (wie im Demo) */
   onStagePointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
+  /** Während der aktiven Runde werden die Eichstriche unsichtbar — gestoppt
+   *  wird nach Gefühl; nach der Abgabe blenden sie zur Auflösung wieder ein. */
+  hideMarks?: boolean;
 }
 
 export default function TapScene({
@@ -75,6 +78,7 @@ export default function TapScene({
   resetKey,
   onLocalOverflow,
   onStagePointerDown,
+  hideMarks = false,
 }: TapSceneProps) {
   const liquidRef = useRef<SVGPathElement>(null);
   const liquidEdgeRef = useRef<SVGPathElement>(null);
@@ -551,8 +555,16 @@ export default function TapScene({
             {/* condensation */}
             <g ref={condGRef} opacity="1" style={{ opacity: 0, transition: "opacity 1.2s" }} />
 
-            {/* etched marks */}
-            <g fontSize="11" fontWeight="600" style={{ fontFamily: "var(--font-mono), monospace" }}>
+            {/* etched marks — beim Zapfen unsichtbar (Blind-Zapf), danach Reveal */}
+            <g
+              fontSize="11"
+              fontWeight="600"
+              style={{
+                fontFamily: "var(--font-mono), monospace",
+                opacity: hideMarks ? 0 : 1,
+                transition: "opacity 0.7s ease",
+              }}
+            >
               {MARKS_ML.map((ml) => {
                 const y = yForMl(ml);
                 const active = ml === targetMl;

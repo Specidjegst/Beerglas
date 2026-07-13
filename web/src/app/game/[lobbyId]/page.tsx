@@ -281,8 +281,8 @@ export default function GamePage() {
       {roundConfig && !played && !expired ? (
         <>
           <div className="target-banner">
-            🎯 DEIN ZIEL: <b>{fmtL(roundConfig.targetMl)}</b> — genau an der leuchtenden Marke
-            loslassen!
+            🎯 DEIN ZIEL: <b>{fmtL(roundConfig.targetMl)}</b> — die Marken sind beim Zapfen
+            unsichtbar: stoppe nach Gefühl!
           </div>
           <Countdown deadlineTs={roundConfig.deadlineTs} onExpire={onExpire} />
         </>
@@ -293,6 +293,7 @@ export default function GamePage() {
         pressure={roundConfig?.pressure ?? 1}
         pouring={pouring}
         locked={locked}
+        hideMarks={roundConfig !== null && !locked}
         resetKey={roundConfig ? `${roundConfig.deadlineTs}` : "idle"}
         onLocalOverflow={endPour}
         onStagePointerDown={(e) => {
