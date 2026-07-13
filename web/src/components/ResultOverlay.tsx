@@ -22,6 +22,10 @@ export interface ResultOverlayProps {
   waitingCount: number;
   settled: SettledInfo | null;
   myWallet: string | null;
+  /** Weiter zur nächsten offenen Lobby (der Server eröffnet nach jedem
+   *  Settlement automatisch eine neue Runde). */
+  onAgain?: () => void;
+  againBusy?: boolean;
 }
 
 export default function ResultOverlay({
@@ -31,6 +35,8 @@ export default function ResultOverlay({
   waitingCount,
   settled,
   myWallet,
+  onAgain,
+  againBusy,
 }: ResultOverlayProps) {
   const acc = result ? accuracyPct(result.pouredMl, targetMl, result.overflow) : 0;
 
@@ -86,6 +92,11 @@ export default function ResultOverlay({
               <div className="seed-line">
                 VRF-Randomness: <code>{shortHex(settled.randomness)}</code>
               </div>
+            ) : null}
+            {onAgain ? (
+              <button className="again" onClick={onAgain} disabled={againBusy}>
+                {againBusy ? "SUCHE NEUE RUNDE …" : "NOCHMAL ZAPFEN 🍺"}
+              </button>
             ) : null}
           </>
         ) : result ? (

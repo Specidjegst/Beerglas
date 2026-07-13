@@ -25,7 +25,13 @@ import Countdown from "@/components/Countdown";
 import { WalletButton } from "@/components/WalletProviders";
 import { useGameSocket } from "@/hooks/useGameSocket";
 import { buildJoinLobbyTransaction } from "@/lib/anchorClient";
-import { fetchServerChainMode, loginMessage, requestNonce, verifyLogin } from "@/lib/api";
+import {
+  fetchLobbies,
+  fetchServerChainMode,
+  loginMessage,
+  requestNonce,
+  verifyLogin,
+} from "@/lib/api";
 import { fmtL, fmtSol } from "@/lib/format";
 import { DEMO_MODE, LOBBY_SIZE } from "@/lib/constants";
 
@@ -219,6 +225,23 @@ export default function GamePage() {
     }
   }, [played, endPour]);
 
+  // ── Nochmal spielen: in die nächste offene Lobby springen ───────────
+  // Voller Seitenwechsel (kein Client-Routing) — setzt sämtlichen
+  // Runden-State inkl. WebSocket sauber zurück.
+  const [againBusy, setAgainBusy] = useState(false);
+  const goNextRound = useCallback(async () => {
+    setAgainBusy(true);
+    try {
+      const list = await fetchLobbies();
+      const next = list.find(
+        (l) => l.lobbyId !== lobbyId && l.status.toLowerCase() === "open",
+      );
+      window.location.assign(next ? `/game/${next.lobbyId}` : "/");
+    } catch {
+      window.location.assign("/");
+    }
+  }, [lobbyId]);
+
   // ── Anzeige ─────────────────────────────────────────────────────────
   const overlayOpen = pourResult !== null || settled !== null;
 
@@ -375,6 +398,8 @@ export default function GamePage() {
         waitingCount={waitingCount}
         settled={settled}
         myWallet={myWallet}
+        onAgain={() => void goNextRound()}
+        againBusy={againBusy}
       />
     </div>
   );
